@@ -5,7 +5,9 @@ set -euo pipefail
 # Fresh Kali setup for OSCP prep.
 #
 # - Updates Kali
-# - Installs Go only if missing
+# - Installs required apt packages:
+#   - golang
+#   - libpcap-dev for naabu
 # - Downloads only oscp_prep.sh from your GitHub repo
 # - Runs oscp_prep.sh
 # - Removes old ProjectDiscovery tools
@@ -19,6 +21,11 @@ set -euo pipefail
 OSCP_SCRIPT_URL="https://raw.githubusercontent.com/0xdbyx/oscp_prep/main/oscp_prep.sh"
 SCRIPT_DIR="$HOME/Desktop/scripts"
 OSCP_SCRIPT_PATH="$SCRIPT_DIR/oscp_prep.sh"
+
+APT_PACKAGES=(
+  golang
+  libpcap-dev
+)
 
 PROJECTDISCOVERY_TOOLS=(
   subfinder
@@ -106,8 +113,12 @@ sudo apt update
 sudo apt full-upgrade -y
 
 # =========================
-# Check curl and install Go
+# Install required apt packages
 # =========================
+
+log "Installing required apt packages"
+
+sudo apt install -y "${APT_PACKAGES[@]}"
 
 log "Checking curl"
 
@@ -117,12 +128,7 @@ fi
 
 log "Checking Go"
 
-if ! command -v go >/dev/null 2>&1; then
-  log "Go not found. Installing Go."
-  sudo apt install -y golang
-else
-  log "Go already installed: $(go version)"
-fi
+go version || die "Go install failed."
 
 # =========================
 # Set Go paths
@@ -139,9 +145,6 @@ add_path_line 'export GOBIN="$HOME/go/bin"' "$HOME/.bashrc"
 add_path_line 'export PATH="$PATH:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.local/bin"' "$HOME/.bashrc"
 
 mkdir -p "$GOBIN"
-
-log "Go version"
-go version || die "Go install failed."
 
 # =========================
 # Download and run oscp_prep.sh only
